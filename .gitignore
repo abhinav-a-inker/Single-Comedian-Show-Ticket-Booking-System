@@ -1,0 +1,119 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/src/generated/prisma
+# ========================
+# Root: ticket-booking
+# ========================
+
+# ========================
+# Environment & Secrets
+# (NEVER commit these)
+# ========================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+ticket-saas/backend/.env
+ticket-saas/backend/.env.*
+
+# ========================
+# Dependencies
+# ========================
+node_modules/
+ticket-saas/backend/node_modules/
+ticket-saas/frontend/node_modules/
+
+# ========================
+# Build Output
+# ========================
+dist/
+build/
+out/
+.dist/
+ticket-saas/frontend/dist/
+ticket-saas/backend/dist/
+
+# ========================
+# Prisma
+# ========================
+# Keep schema.prisma and migrations — DO commit those
+# Ignore generated client (can be regenerated with prisma generate)
+ticket-saas/backend/node_modules/.prisma/
+
+# ========================
+# Logs
+# ========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ========================
+# OS Files
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ========================
+# IDE & Editor
+# ========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ========================
+# TypeScript
+# ========================
+*.tsbuildinfo
+ticket-saas/backend/dist/
+ticket-saas/frontend/dist/
+
+# ========================
+# Testing & Coverage
+# ========================
+coverage/
+.nyc_output/
+*.lcov
+
+# ========================
+# Uploads & Media
+# ========================
+ticket-saas/backend/public/uploads/
+uploads/
+media/
+
+# ========================
+# Certificates & Keys
+# ========================
+*.pem
+*.key
+*.crt
+*.p12
+*.cert
+
+# ========================
+# Miscellaneous
+# ========================
+.yarn-integrity
+.parcel-cache/
+.turbo/
+*.tgz
+hash.js
+table.txt

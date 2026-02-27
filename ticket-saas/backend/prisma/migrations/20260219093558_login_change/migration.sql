@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Login" ALTER COLUMN "name" DROP DEFAULT;

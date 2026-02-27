@@ -1,0 +1,259 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Login {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          Role
+  createdAt     DateTime       @default(now())
+  name          String
+  logs          BookingLog[]
+  cancellations Cancellation[]
+  shows         Show[]
+  scans         TicketScan[]
+}
+
+model Show {
+  id                  String              @id @default(uuid())
+  title               String
+  description         String?
+  venue               String
+  city                String
+  state               String
+  country             String
+  date                DateTime
+  time                String
+  posterImage         String?
+  qrCode              String?
+  whatsappKeyword     String              @unique
+  status              ShowStatus          @default(DRAFT)
+  cancellationAllowed Boolean             @default(true)
+  refundSlabs         Json?
+  totalRows           Int
+  totalCols           Int
+  totalSeats          Int
+  arrangementType     SeatArrangementType @default(FRONT_TO_BACK)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  loginId             String
+  bookings            Booking[]
+  seats               Seat[]
+  seatCategories      SeatCategory[]
+  login               Login               @relation(fields: [loginId], references: [id])
+}
+
+model SeatCategory {
+  id                String        @id @default(uuid())
+  showId            String
+  name              String
+  color             String
+  price             Float
+  earlyBirdPrice    Float?
+  earlyBirdDeadline DateTime?
+  fromRow           String
+  toRow             String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  bookingSeats      BookingSeat[]
+  seats             Seat[]
+  show              Show          @relation(fields: [showId], references: [id], onDelete: Cascade)
+}
+
+model Seat {
+  id          String       @id @default(uuid())
+  showId      String
+  categoryId  String
+  rowLabel    String
+  seatNumber  Int
+  seatCode    String
+  isBlocked   Boolean      @default(false)
+  status      SeatStatus   @default(AVAILABLE)
+  lockedUntil DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  bookingSeat BookingSeat?
+  category    SeatCategory @relation(fields: [categoryId], references: [id])
+  show        Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([showId, seatCode])
+}
+
+model Booking {
+  id           String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingRef   String        @unique
+  showId       String
+  bookerName   String
+  bookerAge    Int
+  bookerEmail  String
+  bookerPhone  String
+  quantity     Int
+  totalAmount  Float         @default(0)
+  status       BookingStatus @default(PENDING)
+  source       BookingSource @default(WHATSAPP)
+  ticketQR     String?
+  ticketSentAt DateTime?     @db.Timestamp(6)
+  createdAt    DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime      @default(now()) @updatedAt @db.Timestamp(6)
+  show         Show          @relation(fields: [showId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  logs         BookingLog[]
+  seats        BookingSeat[]
+  cancellation Cancellation?
+  scans        TicketScan[]
+  transaction  Transaction?
+}
+
+model BookingSeat {
+  id         String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingId  String
+  seatId     String       @unique
+  categoryId String
+  pricePaid  Float
+  createdAt  DateTime     @default(now()) @db.Timestamp(6)
+  booking    Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category   SeatCategory @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  seat       Seat         @relation(fields: [seatId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Transaction {
+  id               String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingId        String            @unique
+  amount           Float
+  currency         String            @default("INR")
+  gateway          PaymentGateway    @default(CASH)
+  gatewayOrderId   String?
+  gatewayPaymentId String?
+  status           TransactionStatus @default(PENDING)
+  paidAt           DateTime?         @db.Timestamp(6)
+  failureReason    String?
+  createdAt        DateTime          @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime          @default(now()) @updatedAt @db.Timestamp(6)
+  booking          Booking           @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model TicketScan {
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingId     String
+  scannedById   String
+  isValid       Boolean
+  invalidReason String?
+  deviceInfo    String?
+  scannedAt     DateTime @default(now()) @db.Timestamp(6)
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  scannedBy     Login    @relation(fields: [scannedById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Cancellation {
+  id              String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingId       String       @unique
+  cancelledById   String
+  reason          String?
+  refundAmount    Float
+  refundPercent   Float
+  hoursBeforeShow Float
+  refundStatus    RefundStatus @default(PENDING)
+  refundedAt      DateTime?    @db.Timestamp(6)
+  cancelledAt     DateTime     @default(now()) @db.Timestamp(6)
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cancelledBy     Login        @relation(fields: [cancelledById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model BookingLog {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  bookingId   String?
+  loginId     String?
+  showId      String?
+  action      LogAction
+  description String?
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  booking     Booking?  @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  login       Login?    @relation(fields: [loginId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+  TICKET_VALIDATOR
+}
+
+enum ShowStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+  BOOKING_ENABLED
+  BOOKING_DISABLED
+}
+
+enum SeatArrangementType {
+  FRONT_TO_BACK
+  BACK_TO_FRONT
+  EQUAL
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  BOOKED
+  BLOCKED
+}
+
+enum BookingStatus {
+  PENDING
+  SEATS_SELECTED
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+  CHECKED_IN
+  NO_SHOW
+  EXPIRED
+}
+
+enum BookingSource {
+  WHATSAPP
+  DASHBOARD
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PaymentGateway {
+  RAZORPAY
+  CASH
+  FREE
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  NOT_APPLICABLE
+}
+
+enum LogAction {
+  BOOKING_STARTED
+  DETAILS_COLLECTED
+  SEATS_LOCKED
+  SEATS_RELEASED
+  PAYMENT_INITIATED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  TICKET_ISSUED
+  TICKET_SENT
+  TICKET_SCANNED
+  BOOKING_CANCELLED
+  BOOKING_EXPIRED
+  REFUND_INITIATED
+  REFUND_PROCESSED
+}
